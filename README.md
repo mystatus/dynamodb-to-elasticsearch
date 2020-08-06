@@ -32,10 +32,12 @@ Usage: dynamodb-to-elasticsearch [options]
 Options:
   -v, --version                              show version
   -d, --debug                                print debug output
-  --aws-default-region [AWS_DEFAULT_REGION]  AWS Default Region
+  --aws-default-region <AWS_DEFAULT_REGION>  AWS Default Region
   --db-endpoint <DB_ENDPOINT>                DynamoDB Endpoint
   --db-table <DB_TABLE>                      DynamoDB Table
-  --db-region [DB_REGION]                    DynamoDB Region
+  --db-region <DB_REGION>                    DynamoDB Region
+  --db-filter <DB_FILTER>                    filter to apply when scanning DynamoDB
+  --db-filter-format <DB_FILTER_FORMAT>      format of the filter to apply when scanning DynamoDB (default: "dnf")
   --es-endpoint <ES_ENDPOINT>                Elasticsearch Endpoint
   --es-index <ES_INDEX>                      Elasticsearch Index
   -h, --help                                 display help for command
@@ -51,13 +53,25 @@ npx github:mystatus/dynamodb-to-elasticsearch
 
 ## Local Development
 
+Clone git repo:
+
 ```shell
 git clone git@github.com:mystatus/dynamodb-to-elasticsearch
 ```
 
+Download dependencies and build `@mystatus/dynamodb-to-elasticsearch`:
+
+```shell
+yarn
+```
+
+Rebuild `@mystatus/dynamodb-to-elasticsearch`:
+
 ```shell
 yarn build
 ```
+
+Run `@mystatus/dynamodb-to-elasticsearch`:
 
 ```shell
 node dist/index.js

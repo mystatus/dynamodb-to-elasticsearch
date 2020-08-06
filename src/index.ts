@@ -14,15 +14,17 @@ const commander = require('commander');
 
 import { Command, CommanderError } from 'commander';
 
+import {
+  Config,
+  ScanParams,
+  //ExpressionAttributeNames,
+  //ExpressionAttributeValues,
+  ProcessEnv,
+} from './types';
+
+import { dnfExpressionToDynamodbFilterParams } from './dnf';
+
 const pkg = require('../package.json');
-
-export interface ProcessEnv {
-  [key: string]: string | undefined;
-}
-
-interface Config {
-  [key: string]: any;
-}
 
 const newCommand = (): Command => {
   const command = new commander.Command();
@@ -35,28 +37,18 @@ const initFlags = (command: Command): Command => {
   return command
     .version(pkg.version, '-v, --version', 'show version')
     .option('-d, --debug', 'print debug output')
+    .option('--aws-default-region <AWS_DEFAULT_REGION>', 'AWS Default Region')
+    .option('--db-endpoint <DB_ENDPOINT>', 'DynamoDB Endpoint')
+    .option('--db-table <DB_TABLE>', 'DynamoDB Table')
+    .option('--db-region <DB_REGION>', 'DynamoDB Region')
+    .option('--db-filter <DB_FILTER>', 'filter to apply when scanning DynamoDB')
     .option(
-      '--aws-default-region [AWS_DEFAULT_REGION]',
-      'AWS Default Region',
-      process.env.AWS_DEFAULT_REGION
+      '--db-filter-format <DB_FILTER_FORMAT>',
+      'format of the filter to apply when scanning DynamoDB',
+      'dnf'
     )
-    .option(
-      '--db-endpoint <DB_ENDPOINT>',
-      'DynamoDB Endpoint',
-      process.env.DB_ENDPOINT
-    )
-    .option('--db-table <DB_TABLE>', 'DynamoDB Table', process.env.DB_TABLE)
-    .option('--db-region [DB_REGION]', 'DynamoDB Region', process.env.DB_REGION)
-    .option(
-      '--es-endpoint <ES_ENDPOINT>',
-      'Elasticsearch Endpoint',
-      process.env.ES_ENDPOINT
-    )
-    .option(
-      '--es-index <ES_INDEX>',
-      'Elasticsearch Index',
-      process.env.ES_INDEX
-    );
+    .option('--es-endpoint <ES_ENDPOINT>', 'Elasticsearch Endpoint')
+    .option('--es-index <ES_INDEX>', 'Elasticsearch Index');
 };
 
 const checkConfig = (config: Config): string[] => {
@@ -79,6 +71,13 @@ const checkConfig = (config: Config): string[] => {
   }
   if (!config.esIndex) {
     errors.push(`es-index is missing, expecting value`);
+  }
+  if (!config.dbFilter) {
+    if (config.dbFilterFormat != 'dnf') {
+      errors.push(
+        `unknown filter format ${config.dbFilterFormat}, only "dnf" is supported`
+      );
+    }
   }
   return errors.sort();
 };
@@ -144,6 +143,8 @@ interface BulkUpload extends RequestParams.Bulk {
 const transferFunction = async (config: Config, env: ProcessEnv) => {
   config.awsDefaultRegion = config.awsDefaultRegion || env.AWS_DEFAULT_REGION;
   config.dbEndpoint = config.dbEndpoint || env.DB_ENDPOINT;
+  config.dbFilter = config.dbFilter || env.DB_FILTER;
+  config.dbFilterFormat = config.dbFilterFormat || env.DB_FILTER_FORMAT;
   config.dbRegion = config.dbRegion || env.DB_REGION;
   config.dbTable = config.dbTable || env.DB_TABLE;
   config.esEndpoint = config.esEndpoint || env.ES_ENDPOINT;
@@ -182,10 +183,19 @@ const transferFunction = async (config: Config, env: ProcessEnv) => {
 
   const elasticsearch = connectToElasticsearch({ node: config.esEndpoint });
 
-  const scanParams: any = {
+  let scanParams: ScanParams = {
     TableName: config.dbTable,
     ExclusiveStartKey: undefined,
   };
+
+  if (config.dbFilter && config.dbFilterFormat) {
+    if (config.dbFilterFormat == 'dnf') {
+      scanParams = {
+        ...scanParams,
+        ...dnfExpressionToDynamodbFilterParams(dbFilter),
+      };
+    }
+  }
 
   let done = false;
 
