@@ -6,18 +6,6 @@ import {
 
 const CharCodeA: number = 'A'.charCodeAt(0);
 
-export const dnfExpressionToDynamodbFilterParams = (
-  str: string
-): FilterParams | undefined => {
-  const arr: any = JSON.parse(str);
-
-  if (!Array.isArray(arr)) {
-    return undefined;
-  }
-
-  return dnfArrayToDynamodbFilterParams(arr);
-};
-
 export const dnfArrayToDynamodbFilterParams = (arr: any[]): FilterParams => {
   let FilterExpression = '';
 
@@ -84,4 +72,16 @@ export const dnfArrayToDynamodbFilterParams = (arr: any[]): FilterParams => {
     ExpressionAttributeNames,
     ExpressionAttributeValues,
   };
+};
+
+export const dnfExpressionToDynamodbFilterParams = (
+  str: string
+): FilterParams | undefined => {
+  const arr: any = JSON.parse(str);
+
+  if (!Array.isArray(arr)) {
+    return undefined;
+  }
+
+  return dnfArrayToDynamodbFilterParams(arr);
 };
