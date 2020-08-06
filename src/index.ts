@@ -192,7 +192,7 @@ const transferFunction = async (config: Config, env: ProcessEnv) => {
     if (config.dbFilterFormat == 'dnf') {
       scanParams = {
         ...scanParams,
-        ...dnfExpressionToDynamodbFilterParams(dbFilter),
+        ...dnfExpressionToDynamodbFilterParams(config.dbFilter),
       };
     }
   }
