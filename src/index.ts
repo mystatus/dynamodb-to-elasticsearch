@@ -155,7 +155,7 @@ const transferFunction = async (config: Config, env: ProcessEnv) => {
   config.dbFilterFormat = config.dbFilterFormat || env.DB_FILTER_FORMAT;
   config.dbRegion = config.dbRegion || env.DB_REGION;
   config.dbTable = config.dbTable || env.DB_TABLE;
-  config.docId = config.docId || env.DOC_ID || '';
+  config.docId = config.docId || env.DOC_ID;
   config.esEndpoint = config.esEndpoint || env.ES_ENDPOINT;
   config.esIndex = config.esIndex || env.ES_INDEX;
   config.debug = config.debug || false;
@@ -208,8 +208,9 @@ const transferFunction = async (config: Config, env: ProcessEnv) => {
 
   let done = false;
 
-  const docIdTemplate =
-    config.docId !== '' ? compileTemplate(config.docId) : undefined;
+  const docIdTemplate = config.docId
+    ? compileTemplate(config.docId)
+    : undefined;
 
   for (let i = 0; i < 10 && !done; i++) {
     if (config.debug) {
@@ -247,13 +248,13 @@ const transferFunction = async (config: Config, env: ProcessEnv) => {
       const bulkRequest: BulkUpload = { refresh: 'true', body };
 
       if (config.debug) {
-        console.log('Elasticsearch Request:', bulkRequest);
+        console.log('Elasticsearch Request:', JSON.stringify(bulkRequest));
       }
 
       const bulkResponse: ApiResponse = await elasticsearch.bulk(bulkRequest);
 
       if (config.debug) {
-        console.log('Elasticsearch Response:', bulkResponse);
+        console.log('Elasticsearch Response:', JSON.stringify(bulkResponse));
       }
 
       if (bulkResponse.body.errors) {
