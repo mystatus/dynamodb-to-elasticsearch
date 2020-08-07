@@ -4,13 +4,11 @@
 
 ## Description
 
-`dynamodb-to-elasticsearch` is a simple CLI tool for scanning over a DynamoDB table and sending documents to Elasticsearch.  This package is written in [TypeScript](https://www.typescriptlang.org/).
+`dynamodb-to-elasticsearch` is a simple CLI tool for iterating over an [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) table and sending documents to [Elasticsearch](https://www.elastic.co/elasticsearch/).  This package is written in [TypeScript](https://www.typescriptlang.org/).
 
 This package is currently maintained by [Defense Digital Service](https://dds.mil/) (DDS).
 
-## Usage
-
-### Installation
+## Setup
 
 NPM:
 
@@ -24,7 +22,7 @@ Yarn:
 yarn add @mystatus/dynamodb-to-elasticsearch
 ```
 
-### Usage
+## Usage
 
 ```text
 Usage: dynamodb-to-elasticsearch [options]
@@ -43,7 +41,7 @@ Options:
   -h, --help                                 display help for command
 ```
 
-### NPX
+## NPX
 
 To use `npx` to temporarily download and run `dynamodb-to-elasticsearch` use the following command.
 

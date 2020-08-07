@@ -72,6 +72,7 @@
     "@elastic/elasticsearch": "^7.8.0",
     "aws-sdk": "^2.726.0",
     "commander": "^6.0.0",
+    "handlebars": "^4.7.6",
     "tslib": "^1.9.3"
   }
 }

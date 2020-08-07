@@ -14,17 +14,21 @@ const commander = require('commander');
 
 import { Command, CommanderError } from 'commander';
 
-import {
-  Config,
-  ScanParams,
-  //ExpressionAttributeNames,
-  //ExpressionAttributeValues,
-  ProcessEnv,
-} from './types';
+import { registerHelper, compile as compileTemplate } from 'handlebars';
+
+import { Config, ProcessEnv, ScanParams } from './types';
 
 import { dnfExpressionToDynamodbFilterParams } from './dnf';
 
 const pkg = require('../package.json');
+
+registerHelper('coalesce', (a: any, b: any) => a || b);
+
+/*
+const renderTemplate = (tmpl: string, vars: TemplateVariables): string => {
+  return new Function('return `' + tmpl + '`;').call(vars);
+};
+*/
 
 const newCommand = (): Command => {
   const command = new commander.Command();
@@ -46,6 +50,10 @@ const initFlags = (command: Command): Command => {
       '--db-filter-format <DB_FILTER_FORMAT>',
       'format of the filter to apply when scanning DynamoDB',
       'dnf'
+    )
+    .option(
+      '--doc-id <DOC_ID>',
+      'Template literal for document id, eg., "hello-${doc.id}-world"'
     )
     .option('--es-endpoint <ES_ENDPOINT>', 'Elasticsearch Endpoint')
     .option('--es-index <ES_INDEX>', 'Elasticsearch Index');
@@ -147,6 +155,7 @@ const transferFunction = async (config: Config, env: ProcessEnv) => {
   config.dbFilterFormat = config.dbFilterFormat || env.DB_FILTER_FORMAT;
   config.dbRegion = config.dbRegion || env.DB_REGION;
   config.dbTable = config.dbTable || env.DB_TABLE;
+  config.docId = config.docId || env.DOC_ID || '';
   config.esEndpoint = config.esEndpoint || env.ES_ENDPOINT;
   config.esIndex = config.esIndex || env.ES_INDEX;
   config.debug = config.debug || false;
@@ -199,6 +208,9 @@ const transferFunction = async (config: Config, env: ProcessEnv) => {
 
   let done = false;
 
+  const docIdTemplate =
+    config.docId !== '' ? compileTemplate(config.docId) : undefined;
+
   for (let i = 0; i < 10 && !done; i++) {
     if (config.debug) {
       console.log(
@@ -217,12 +229,26 @@ const transferFunction = async (config: Config, env: ProcessEnv) => {
     }
 
     if (data.Items.length > 0) {
-      const body = data.Items.flatMap((doc: any) => [
-        { index: { _index: config.esIndex, _id: doc.ID } },
-        doc,
-      ]);
+      const body = data.Items.flatMap((doc: any) => {
+        if (docIdTemplate) {
+          return [
+            {
+              index: {
+                _index: config.esIndex,
+                _id: docIdTemplate(doc),
+              },
+            },
+            doc,
+          ];
+        }
+        return [{ index: { _index: config.esIndex } }, doc];
+      });
 
       const bulkRequest: BulkUpload = { refresh: 'true', body };
+
+      if (config.debug) {
+        console.log('Elasticsearch Request:', bulkRequest);
+      }
 
       const bulkResponse: ApiResponse = await elasticsearch.bulk(bulkRequest);
 
